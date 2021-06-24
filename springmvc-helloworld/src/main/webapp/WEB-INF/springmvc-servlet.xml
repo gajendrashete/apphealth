@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="
+   http://www.springframework.org/schema/beans     
+   http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+   http://www.springframework.org/schema/context 
+   http://www.springframework.org/schema/context/spring-context-3.0.xsd">
+
+	<context:component-scan base-package="com.example.demo" />
+
+	<context:annotation-config />
+
+		<bean id="greetrService" class="com.example.demo.customhealth.GreeterService">
+	</bean>
+	
+	<bean id="viewResolver"
+		class="org.springframework.web.servlet.view.InternalResourceViewResolver">
+		<property name="prefix" value="/jsp/" />
+		<property name="suffix" value=".jsp" />
+	</bean>
+
+	<bean id="h2DataSource" class="com.zaxxer.hikari.HikariDataSource" destroy-method="close">
+		<constructor-arg index="0">
+			<bean id="hikariConfig" class="com.zaxxer.hikari.HikariConfig">
+				<property name="poolName" value="mercatus_connection_pool" />
+				<property name="dataSourceClassName" value="org.h2.jdbcx.JdbcDataSource" />
+				<property name="maximumPoolSize" value="30" />
+				<property name="maxLifetime" value="60000" />
+				<property name="idleTimeout" value="10000" />
+				<property name="dataSourceProperties">
+					<props>
+						<prop key="url">jdbc:h2:mem:db1;DB_CLOSE_DELAY=-1</prop>
+						<prop key="user">sa</prop>
+						<prop key="password"></prop>
+					</props>
+				</property>
+			</bean>
+		</constructor-arg>
+	</bean>
+	
+	<!--  Contributes ds pool stats using DS bean above-->
+	<bean id="myInfoContributor"
+		class="com.example.demo.customhealth.ApplicationInfoContributor">
+	</bean>
+	
+
+	<bean id="orderedHealthAggregator" class="org.springframework.boot.actuate.health.OrderedHealthAggregator">
+	</bean>
+	
+	<bean id="applicationHealthIndicator" class="org.springframework.boot.actuate.health.ApplicationHealthIndicator">
+	</bean>
+
+	<bean id="dataSourceHealthIndicator" class="org.springframework.boot.actuate.health.DataSourceHealthIndicator">
+		<constructor-arg index="0" ref="h2DataSource" />
+	</bean>
+
+	<bean id="diskSpaceHealthIndicator"
+		class="org.springframework.boot.actuate.health.DiskSpaceHealthIndicator">
+		<constructor-arg index="0">
+			<bean id="diskSpaceHealthIndicatorProperties" class="org.springframework.boot.actuate.health.DiskSpaceHealthIndicatorProperties" />
+		</constructor-arg>
+	</bean>
+	
+	
+	<bean id="remoteSvclHealthIndicator" class="com.example.demo.customhealth.RemoteSvclHealthIndicator"></bean>
+	
+	<bean id="dbPoolHealthIndicator" class="com.example.demo.customhealth.DbPoolHealthIndicator"></bean>
+	
+
+	<bean id="healthEndpoint" class="org.springframework.boot.actuate.endpoint.HealthEndpoint">
+		<constructor-arg index="0" ref="orderedHealthAggregator" />
+		<constructor-arg index="1" type="java.util.Map">
+			<map>
+				<entry key="application" value-ref="applicationHealthIndicator" />
+				<entry key="db" value-ref="dataSourceHealthIndicator" />
+				<entry key="disk" value-ref="diskSpaceHealthIndicator" />
+				<entry key="dbpool" value-ref="dbPoolHealthIndicator"></entry>
+				<entry key="remotesvc" value-ref="remoteSvclHealthIndicator"></entry>
+			</map>
+		</constructor-arg>
+	</bean>
+		
+	
+	<bean id="infoEndpoint"
+		class="org.springframework.boot.actuate.endpoint.InfoEndpoint">
+		<constructor-arg index="0" type="java.util.List">
+			<list>
+				<ref bean="myInfoContributor" />
+			</list>
+		</constructor-arg>
+	</bean>
+
+
+
+	<bean id="metricsEndpoint"
+		class="org.springframework.boot.actuate.endpoint.MetricsEndpoint">
+		<constructor-arg index="0">
+			<bean id="systemPublicMetrics" class="org.springframework.boot.actuate.endpoint.SystemPublicMetrics">
+			</bean>
+		</constructor-arg>
+	</bean>
+
+	<bean id="beansEndpoint"
+		class="org.springframework.boot.actuate.endpoint.BeansEndpoint">
+	</bean>
+
+	<bean id="environmentEndpoint"
+		class="org.springframework.boot.actuate.endpoint.EnvironmentEndpoint">
+	</bean>
+
+</beans>
